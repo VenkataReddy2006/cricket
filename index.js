@@ -102,6 +102,11 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+// Public root route to check server health
+app.get('/', (req, res) => {
+  res.send('Cricket backend is running successfully!');
+});
+
 // Protect all routes below this line
 app.use(authMiddleware);
 
