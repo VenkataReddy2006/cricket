@@ -13,6 +13,11 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
+// Root route for health check
+app.get('/', (req, res) => {
+  res.send('Cricket backend is running successfully!');
+});
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
@@ -101,11 +106,6 @@ const authMiddleware = (req, res, next) => {
     res.status(401).json({ message: 'Token is not valid' });
   }
 };
-
-// Public root route to check server health
-app.get('/', (req, res) => {
-  res.send('Cricket backend is running successfully!');
-});
 
 // Protect all routes below this line
 app.use(authMiddleware);
