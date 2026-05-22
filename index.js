@@ -232,5 +232,40 @@ app.put('/api/matches/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/matches/:id', async (req, res) => {
+  try {
+    // Ensure match belongs to user
+    const match = await Match.findOne({ id: req.params.id, userEmail: req.user.email });
+    if (!match) return res.status(404).json({ message: 'Match not found or unauthorized' });
+
+    await Match.findOneAndDelete({ id: req.params.id, userEmail: req.user.email });
+    res.json({ message: 'Match deleted successfully' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.post('/api/matches/sync', async (req, res) => {
+  try {
+    const matchesData = req.body.matches;
+    const syncedMatches = [];
+    
+    for (const m of matchesData) {
+      if (m.id) {
+        const { _id, ...rest } = m;
+        const updated = await Match.findOneAndUpdate(
+          { id: m.id, userEmail: req.user.email },
+          { ...rest, id: m.id, userEmail: req.user.email },
+          { new: true, upsert: true, setDefaultsOnInsert: true }
+        );
+        syncedMatches.push(updated);
+      }
+    }
+    res.json(syncedMatches);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
