@@ -5,6 +5,9 @@ const playerSchema = new mongoose.Schema({
   userEmail: { type: String, required: true },
   name: { type: String, required: true },
   imageBase64: { type: String, default: null },
+  singleModeStats: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
+  pairModeStats: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
+  teamModeStats: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
   batting: {
     matches: { type: Number, default: 0 },
     innings: { type: Number, default: 0 },
