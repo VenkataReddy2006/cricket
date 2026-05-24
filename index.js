@@ -26,69 +26,44 @@ mongoose.connect(process.env.MONGO_URI)
 const JWT_SECRET = process.env.JWT_SECRET || 'cricket_super_secret_key';
 
 // --- AUTH ROUTES ---
-app.post('/api/auth/register', async (req, res) => {
+
+
+app.post('/api/auth/google-login', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    
+    const { email, name } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
     // Check if user exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered.' });
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Generate a random 28-character alphanumeric string for userId
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let userId = '';
-    for (let i = 0; i < 28; i++) {
-      userId += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    // Save user
-    const newUser = new User({ 
-      userId,
-      name,
-      email, 
-      password: hashedPassword 
-    });
-    await newUser.save();
-
-    // Create token
-    const token = jwt.sign({ userId: newUser._id, email: newUser.email }, JWT_SECRET, { expiresIn: '30d' });
-
-    res.status(201).json({ token, email: newUser.email, name: newUser.name });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Find user
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'This email is not registered.' });
-    }
+      // Generate a random 28-character alphanumeric string for userId
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let userId = '';
+      for (let i = 0; i < 28; i++) {
+        userId += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
 
-    // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid password.' });
+      // Save user
+      user = new User({ 
+        userId,
+        name: name || email.split('@')[0],
+        email, 
+        password: 'google_authenticated_external_user' // Dummy password since Google is used
+      });
+      await user.save();
     }
 
     // Create token
     const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
 
-    res.json({ token, email: user.email });
+    res.json({ token, email: user.email, name: user.name });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // --- AUTH MIDDLEWARE ---
 const authMiddleware = (req, res, next) => {
